@@ -1,4 +1,11 @@
-import { createApp } from 'vue'
-import App from './App.vue'
+import { createApp } from 'vue';
+import App from './App.vue';
+import VueApexCharts from "vue3-apexcharts";
+import ElementPlus from 'element-plus';
+import 'element-plus/lib/theme-chalk/index.css';
 
-createApp(App).mount('#app')
+const app = createApp(App);
+app.use(VueApexCharts);
+app.use(ElementPlus);
+
+app.mount('#app');
