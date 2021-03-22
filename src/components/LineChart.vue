@@ -19,6 +19,7 @@ export default {
   computed: {
     options() {
       return {
+        colors: ['#00587a', '#ef4f4f50'],
         xaxis: {
           categories: this.categories
         }
