@@ -1,6 +1,6 @@
 <template>
   <el-header>
-    <div>Stock Financial Visualization</div>
+    <div class="header-title">Stock Financial Visualization</div>
   </el-header>
   <el-main>
     <el-container class="container">
@@ -29,61 +29,27 @@
           </template>
         </el-upload>
       </div>
-      <div class="graph">
+      <div class="table" v-if="content.length">
+        <Table :data="content"/>
+      </div>
+      <el-divider v-if="content.length"></el-divider>
+      <div class="graph" v-if="content.length">
         <el-row :gutter="20">
-
           <el-col :lg="12" :md="24">
-            <el-card class="box-card">
-              <template #header>
-                <div class="card-header">
-                  <span>Historical PER</span>
-                </div>
-              </template>
-              <div class="card-body">
-                <LineChart :categories="categories" :series="series" />
-              </div>
-            </el-card>
+            <ShowChart :data="data_show_per" />
           </el-col>
-
           <el-col :lg="12" :md="24">
-            <el-card class="box-card">
-              <template #header>
-                <div class="card-header">
-                  <span>Historical PER</span>
-                </div>
-              </template>
-              <div class="card-body">
-                <LineChart :categories="categories" :series="series" />
-              </div>
-            </el-card>
+            <ShowChart :data="data_show_pbv" />
           </el-col>
-
           <el-col :lg="12" :md="24">
-            <el-card class="box-card">
-              <template #header>
-                <div class="card-header">
-                  <span>Historical PER</span>
-                </div>
-              </template>
-              <div class="card-body">
-                <LineChart :categories="categories" :series="series" />
-              </div>
-            </el-card>
+            <ShowChart :data="data_show_npm" />
           </el-col>
-
           <el-col :lg="12" :md="24">
-            <el-card class="box-card">
-              <template #header>
-                <div class="card-header">
-                  <span>Historical PER</span>
-                </div>
-              </template>
-              <div class="card-body">
-                <LineChart :categories="categories" :series="series" />
-              </div>
-            </el-card>
+            <ShowChart :data="data_show_roe" />
           </el-col>
-
+          <el-col :lg="24" :md="24">
+            <ShowChart :data="data_show_eps" />
+          </el-col>
         </el-row>
       </div>
     </el-container>
@@ -91,21 +57,18 @@
 </template>
 
 <script>
-import LineChart from './LineChart.vue';
+import Table from './Table.vue';
+import ShowChart from './ShowChart.vue';
 import xlsx from 'xlsx';
 
 export default {
   name: 'Main',
   components: {
-    LineChart
+    Table,
+    ShowChart
   },
   data() {
     return {
-      categories: [1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998],
-      series: [{
-        name: 'series-1',
-        data: [30, 40, 45, 50, 49, 60, 70, 91]
-      }],
       content: [],
       attachments: [],
       fileExcel: null
@@ -114,15 +77,14 @@ export default {
   methods: {
     loadData() {
       const reader = new FileReader();
+      const _this = this;
       reader.onload = function(e) {
         const data      = e.target.result;
         const workbook  = xlsx.read(data, {
           type: 'binary'
         });
         const sheet_name_list = workbook.SheetNames;
-        const content         = xlsx.utils.sheet_to_json(workbook.Sheets[sheet_name_list[0]]);
-        this.content          = content;
-        console.log(this.content);
+        _this.content          = xlsx.utils.sheet_to_json(workbook.Sheets[sheet_name_list[0]]);
       };
       reader.onerror = function(ex) {
         console.log(ex);
@@ -133,7 +95,70 @@ export default {
       this.attachments.push(file);
       this.fileExcel = file.raw;
     },
+    arrayMean(arr) {
+      const sum = arr.reduce((acc, val) => {
+        acc = acc + val;
+        return acc;
+      }, 0);
+      const avg = Math.round(sum*100/arr.length)/100;
+      const result = arr.map(() => {
+        if (sum) {
+          return avg;
+        } else {
+          return sum;
+        }
+      });
+      return result;
+    },
+    chartDefault(title, key, content) {
+      const categories  = content.map(val => val['Quarter']);
+      const series      = content.map(val => val[key]);
+      const code        = content.length ? content[0].Code : '';
+      return {
+        title: `${title} ${code}`,
+        categories: categories,
+        series: [
+          {
+            name: key,
+            type: 'line',
+            data: series
+          },
+          {
+            name: `Mean ${key}`,
+            type: 'area',
+            data: this.arrayMean(series)
+          }
+        ]
+      }
+    }
   },
+  computed: {
+    data_show_per() {
+      const key   = 'PER';
+      const title = `Historical ${key}`;
+      return this.chartDefault(title, key, this.content);
+    },
+    data_show_pbv() {
+      const key   = 'PBV(%)';
+      const title = `Historical ${key}`;
+      return this.chartDefault(title, key, this.content);
+    },
+    data_show_npm() {
+      const key   = 'NPM(%)';
+      const title = `Historical ${key}`;
+      return this.chartDefault(title, key, this.content);
+    },
+    data_show_roe() {
+      const key   = 'ROE(%)';
+      const title = `Historical ${key}`;
+      return this.chartDefault(title, key, this.content);
+    },
+    data_show_eps() {
+      const key   = 'EPS(Rp)';
+      const title = `Historical ${key}`;
+      return this.chartDefault(title, key, this.content);
+    }
+  }
 }
 </script>
 
@@ -142,16 +167,20 @@ export default {
   .container {
     flex-direction: column;
   }
+  .header-title {
+    font-size: 32px;
+    margin-top: 20px;
+  }
+  .table {
+    margin-top: 20px;
+  }
   .graph {
+    margin-top: 32px;
     width: 100%;
   }
   .box-card {
     width: 100%;
     margin: 10px 0;
   }
-  .card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-  }
+  
 </style>
