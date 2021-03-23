@@ -4,6 +4,7 @@
   </el-header>
   <el-main>
     <el-container class="container">
+
       <div class="upload-form">
         <el-upload
           class="upload-demo"
@@ -29,10 +30,46 @@
           </template>
         </el-upload>
       </div>
+
       <div class="table" v-if="content.length">
         <Table :data="content"/>
       </div>
       <el-divider v-if="content.length"></el-divider>
+
+      <div class="option" v-if="content.length">
+        <el-row :gutter="20">
+          <el-col :lg="12" :md="12" :sm="24">
+            <div class="option-title">Filter by</div>
+            <div class="option-body">
+              <el-select v-model="quarter" placeholder="Select Time">
+                <el-option
+                  v-for="item in options"
+                  :key="item.value"
+                  :label="item.label"
+                  :value="item.value">
+                </el-option>
+              </el-select>
+            </div>
+          </el-col>
+          <el-col :lg="12" :md="12" :sm="24">
+            <div class="option-title">Stocksplit</div>
+            <div class="option-body">
+              <el-switch v-model="isStockSplit">
+              </el-switch>
+              <el-select v-if="isStockSplit" v-model="splitQuarter" placeholder="Select Quarter" class="ml-option">
+                <el-option
+                  v-for="item in optionQuarter"
+                  :key="item.value"
+                  :label="item.label"
+                  :value="item.value">
+                </el-option>
+              </el-select>
+              <el-input v-if="splitQuarter" placeholder="Split Num" v-model="splitNum" class="ml-option"></el-input>
+            </div>
+          </el-col>
+        </el-row>
+      </div>
+
       <div class="graph" v-if="content.length">
         <el-row :gutter="20">
           <el-col :lg="12" :md="24">
@@ -52,6 +89,7 @@
           </el-col>
         </el-row>
       </div>
+      
     </el-container>
   </el-main>
 </template>
@@ -69,9 +107,26 @@ export default {
   },
   data() {
     return {
-      content: [],
+      rawcontent: [],
       attachments: [],
-      fileExcel: null
+      fileExcel: null,
+      options: [{
+          value: 0,
+          label: 'All time'
+        }, {
+          value: -12,
+          label: 'Last 3 years'
+        }, {
+          value: -20,
+          label: 'Last 5 years'
+        }, {
+          value: -40,
+          label: 'Last 10 years'
+        }],
+      quarter: 0,
+      isStockSplit: false,
+      splitQuarter: null,
+      splitNum: null
     }
   },
   methods: {
@@ -84,7 +139,7 @@ export default {
           type: 'binary'
         });
         const sheet_name_list = workbook.SheetNames;
-        _this.content          = xlsx.utils.sheet_to_json(workbook.Sheets[sheet_name_list[0]]);
+        _this.rawcontent          = xlsx.utils.sheet_to_json(workbook.Sheets[sheet_name_list[0]]);
       };
       reader.onerror = function(ex) {
         console.log(ex);
@@ -133,6 +188,42 @@ export default {
     }
   },
   computed: {
+    optionQuarter() {
+      return this.rawcontent.map(val => {
+        return {
+          value: val.Quarter,
+          label: val.Quarter
+        }
+      })
+    },
+    content() {
+      if (this.isStockSplit && this.splitNum) {
+        if (isFinite(this.splitNum)) {
+          const num           = parseFloat(this.splitNum);
+          const content       = this.rawcontent.slice(this.quarter);
+          const indexQuarter  = content.findIndex(val => val.Quarter == this.splitQuarter);
+          const result = content.map((val, index) => {
+            if (index < indexQuarter) {
+              return {
+                ... val,
+                'EPS(Rp)': Math.round(val['EPS(Rp)']*100/num)/100
+              }
+            } else {
+              return {
+                ... val,
+                'EPS(Rp)': Math.round(val['EPS(Rp)']*100)/100
+              };
+            }
+          });
+          return result;
+        } else {
+          alert("It's not a number");
+          return this.rawcontent.slice(this.quarter);
+        }
+      } else {
+        return this.rawcontent.slice(this.quarter);
+      }
+    },
     data_show_per() {
       const key   = 'PER';
       const title = `Historical ${key}`;
@@ -181,6 +272,14 @@ export default {
   .box-card {
     width: 100%;
     margin: 10px 0;
+  }
+  .option-title {
+    font-size: 20px;
+    margin-bottom: 12px;
+  }
+  .ml-option {
+    margin-left: 12px;
+    width: 120px;
   }
   
 </style>
