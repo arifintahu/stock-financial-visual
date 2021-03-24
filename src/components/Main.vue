@@ -72,6 +72,9 @@
 
       <div class="graph" v-if="content.length">
         <el-row :gutter="20">
+          <el-col :lg="24" :md="24">
+            <FairValue :data="harga_wajar"/>
+          </el-col>
           <el-col :lg="12" :md="24">
             <ShowChart :data="data_show_per" />
           </el-col>
@@ -97,13 +100,15 @@
 <script>
 import Table from './Table.vue';
 import ShowChart from './ShowChart.vue';
+import FairValue from './FairValue.vue';
 import xlsx from 'xlsx';
 
 export default {
   name: 'Main',
   components: {
     Table,
-    ShowChart
+    ShowChart,
+    FairValue
   },
   data() {
     return {
@@ -126,7 +131,14 @@ export default {
       quarter: 0,
       isStockSplit: false,
       splitQuarter: null,
-      splitNum: null
+      splitNum: null,
+      harga_wajar: {
+        mean_per: 0,
+        mean_pbv: 0,
+        mean_eps: 0,
+        last_eps: 0,
+        last_bv: 0
+      }
     }
   },
   methods: {
@@ -169,6 +181,18 @@ export default {
       const categories  = content.map(val => val['Quarter']);
       const series      = content.map(val => val[key]);
       const code        = content.length ? content[0].Code : '';
+      const mean        = this.arrayMean(series);
+
+      if (key == 'PER') {
+        this.harga_wajar.mean_per = mean[0];
+      } else if (key == 'PBV(%)') {
+        this.harga_wajar.mean_pbv = mean[0];
+        this.harga_wajar.last_bv  = content.slice(-1)[0]['BV(Rp)'];
+      } else if (key == 'EPS(Rp)') {
+        this.harga_wajar.mean_eps = mean[0];
+        this.harga_wajar.last_eps = series.slice(-1)[0];
+      }
+
       return {
         title: `${title} ${code}`,
         categories: categories,
@@ -181,7 +205,7 @@ export default {
           {
             name: `Mean ${key}`,
             type: 'area',
-            data: this.arrayMean(series)
+            data: mean
           }
         ]
       }
@@ -227,27 +251,32 @@ export default {
     data_show_per() {
       const key   = 'PER';
       const title = `Historical ${key}`;
-      return this.chartDefault(title, key, this.content);
+      const data  = this.chartDefault(title, key, this.content);
+      return data;
     },
     data_show_pbv() {
       const key   = 'PBV(%)';
       const title = `Historical ${key}`;
-      return this.chartDefault(title, key, this.content);
+      const data  = this.chartDefault(title, key, this.content);
+      return data;
     },
     data_show_npm() {
       const key   = 'NPM(%)';
       const title = `Historical ${key}`;
-      return this.chartDefault(title, key, this.content);
+      const data  = this.chartDefault(title, key, this.content);
+      return data;
     },
     data_show_roe() {
       const key   = 'ROE(%)';
       const title = `Historical ${key}`;
-      return this.chartDefault(title, key, this.content);
+      const data  = this.chartDefault(title, key, this.content);
+      return data;
     },
     data_show_eps() {
       const key   = 'EPS(Rp)';
       const title = `Historical ${key}`;
-      return this.chartDefault(title, key, this.content);
+      const data  = this.chartDefault(title, key, this.content);
+      return data;
     }
   }
 }
