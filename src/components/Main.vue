@@ -177,19 +177,38 @@ export default {
       });
       return result;
     },
+    calculateStd(arr, mean) {
+      const sum = arr.reduce((acc, val) => {
+        acc = acc + Math.pow(val-mean, 2);
+        return acc;
+      }, 0);
+      return Math.round(Math.sqrt(sum/arr.length)*100)/100;
+    },
+    arrayReverseZScore(z, mean, std, arr) {
+      const value = Math.round((z*std + mean)*100)/100;
+      const result = arr.map(() => {
+        return value;
+      });
+      return result;
+    },
     chartDefault(title, key, content) {
-      const categories  = content.map(val => val['Quarter']);
-      const series      = content.map(val => val[key]);
-      const code        = content.length ? content[0].Code : '';
-      const mean        = this.arrayMean(series);
+      const categories    = content.map(val => val['Quarter']);
+      const series        = content.map(val => val[key]);
+      const code          = content.length ? content[0].Code : '';
+      const arr_mean      = this.arrayMean(series);
+      const std           = this.calculateStd(series, arr_mean[0]);
+      const arr_std1_plus = this.arrayReverseZScore(1, arr_mean[0], std, series);
+      const arr_std1_min  = this.arrayReverseZScore(-1, arr_mean[0], std, series);
+      const arr_std2_plus = this.arrayReverseZScore(2, arr_mean[0], std, series);
+      const arr_std2_min  = this.arrayReverseZScore(-2, arr_mean[0], std, series);
 
       if (key == 'PER') {
-        this.harga_wajar.mean_per = mean[0];
+        this.harga_wajar.mean_per = arr_mean[0];
       } else if (key == 'PBV(%)') {
-        this.harga_wajar.mean_pbv = mean[0];
+        this.harga_wajar.mean_pbv = arr_mean[0];
         this.harga_wajar.last_bv  = content.slice(-1)[0]['BV(Rp)'];
       } else if (key == 'EPS(Rp)') {
-        this.harga_wajar.mean_eps = mean[0];
+        this.harga_wajar.mean_eps = arr_mean[0];
         this.harga_wajar.last_eps = series.slice(-1)[0];
       }
 
@@ -203,9 +222,29 @@ export default {
             data: series
           },
           {
-            name: `Mean ${key}`,
-            type: 'area',
-            data: mean
+            name: `Std Dev +2`,
+            type: 'line',
+            data: arr_std2_plus
+          },
+          {
+            name: `Std Dev +1`,
+            type: 'line',
+            data: arr_std1_plus
+          },
+          {
+            name: `Mean`,
+            type: 'line',
+            data: arr_mean
+          },
+          {
+            name: `Std Dev -1`,
+            type: 'line',
+            data: arr_std1_min
+          },
+          {
+            name: `Std Dev -2`,
+            type: 'line',
+            data: arr_std2_min
           }
         ]
       }
