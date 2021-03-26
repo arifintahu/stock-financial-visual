@@ -74,6 +74,24 @@ export default {
           mos: this.current_price ? this.countmos(value) : ''
         });
       }
+
+      if (val.std1_pbv && val.last_bv) {
+        const value = Math.round(val.std1_pbv*val.last_bv);
+        this.tableData.push({
+          desc: 'Price Std+1 PBV x last BV',
+          value: value,
+          mos: this.current_price ? this.countmos(value) : ''
+        });
+      }
+
+      if (val.std2_pbv && val.last_bv) {
+        const value = Math.round(val.std2_pbv*val.last_bv);
+        this.tableData.push({
+          desc: 'Price Std+2 PBV x last BV',
+          value: value,
+          mos: this.current_price ? this.countmos(value) : ''
+        });
+      }
     },
     countmos(value) {
       const mos = (value-this.current_price)/this.current_price;

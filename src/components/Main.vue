@@ -1,6 +1,6 @@
 <template>
   <el-header>
-    <div class="header-title">Stock Financial Visualization</div>
+    <div class="header-title">Visual Stock Financial Ratio</div>
   </el-header>
   <el-main>
     <el-container class="container">
@@ -135,6 +135,8 @@ export default {
       harga_wajar: {
         mean_per: 0,
         mean_pbv: 0,
+        std1_pbv: 0,
+        std2_pbv: 0,
         mean_eps: 0,
         last_eps: 0,
         last_bv: 0
@@ -206,6 +208,8 @@ export default {
         this.harga_wajar.mean_per = arr_mean[0];
       } else if (key == 'PBV(%)') {
         this.harga_wajar.mean_pbv = arr_mean[0];
+        this.harga_wajar.std1_pbv = arr_std1_plus[0];
+        this.harga_wajar.std2_pbv = arr_std2_plus[0];
         this.harga_wajar.last_bv  = content.slice(-1)[0]['BV(Rp)'];
       } else if (key == 'EPS(Rp)') {
         this.harga_wajar.mean_eps = arr_mean[0];
